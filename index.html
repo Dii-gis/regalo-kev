@@ -242,7 +242,8 @@ audioActivado = true;
 
 let musica = document.getElementById("musicaFondo");
 
-musica.volume = 0.4; // volumen suave
+musica.volume = 0.35;     // volumen suave
+musica.currentTime = 38;  
 musica.play();
 
 }
@@ -292,6 +293,7 @@ let video = document.getElementById("videoHelado");
 
 video.currentTime = 0;
 video.muted = !audioActivado;
+video.volume = 0.5;
 video.play();
 
 video.onended = function(){
@@ -322,6 +324,7 @@ let video = document.getElementById("videoKev");
 
 video.currentTime = 0;
 video.muted = !audioActivado;
+video.volume = 0.5;
 video.play();
 
 video.onended = function(){
