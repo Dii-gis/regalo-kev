@@ -116,6 +116,34 @@ border-radius:50px;
 z-index:10;
 }
 
+.textoKev{
+position:absolute;
+bottom:40px;
+left:50%;
+transform:translateX(-50%);
+color:white;
+font-size:clamp(16px,3vw,24px);
+text-align:center;
+background:rgba(0,0,0,0.35);
+padding:12px 20px;
+border-radius:12px;
+backdrop-filter:blur(4px);
+opacity:0;
+animation:aparecerTexto 2.5s forwards;
+animation-delay:2s;
+}
+
+@keyframes aparecerTexto{
+from{
+opacity:0;
+transform:translateX(-50%) translateY(10px);
+}
+to{
+opacity:1;
+transform:translateX(-50%) translateY(0);
+}
+}
+
 </style>
 
 </head>
@@ -200,6 +228,9 @@ class="video"
 src="video/regalokev.mp4"
 playsinline
 ></video>
+<div class="textoKev">
+Seeing you with tenderness… feels like this. My prince.
+</div>
 
 <div class="flecha" onclick="volverA(4)">←</div>
 
