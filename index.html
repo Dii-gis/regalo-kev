@@ -255,9 +255,7 @@ document.removeEventListener("click", activarAudio);
 
 
 
-/* STOP ALL VIDEOS FUNCTION */
-
-function detenerVideos(){
+/* CAMBIAR VOLUMEN MUSICA */
 
 function cambiarVolumenMusica(volumenObjetivo, duracion = 800){
 
@@ -283,6 +281,11 @@ clearInterval(intervalo);
 }, pasoDuracion);
 
 }
+
+
+/* STOP ALL VIDEOS FUNCTION */
+
+function detenerVideos(){
 
 let v1 = document.getElementById("videoHelado");
 let v2 = document.getElementById("videoKev");
@@ -311,7 +314,11 @@ escenaActual = numero;
 
 document.getElementById("escena"+escenaActual).classList.add("visible");
 
+if(numero==1 || numero==2 || numero==4 || numero==6){
 
+cambiarVolumenMusica(0.45);
+
+}
 /* VIDEO HELADO */
 if(numero==3){
 cambiarVolumenMusica(0.15);
@@ -329,7 +336,6 @@ mostrarEscena(4);
 };
 
 }
-cambiarVolumenMusica(0.45);
 
 /* MENSAJE REGALO */
 if(numero==4){
@@ -342,13 +348,11 @@ mostrarEscena(5);
 
 }
 
-cambiarVolumenMusica(0.15);
 
 /* VIDEO KEV */
 if(numero==5){
-
-let video = document.getElementById("videoKev");
 cambiarVolumenMusica(0.15);
+let video = document.getElementById("videoKev");
 
 video.currentTime = 0;
 video.muted = !audioActivado;
@@ -360,12 +364,6 @@ video.onended = function(){
 mostrarEscena(6);
 
 };
-/* ESCENA FINAL */
-if(numero==6){
-
-cambiarVolumenMusica(0.45);
-
-}
 
 }
 
