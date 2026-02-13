@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nuestro rinconcito</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0b0b12;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto}
+    .wrap{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+    canvas{width:min(92vw,520px);height:min(92vw,520px);border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#080813}
+    .hint{opacity:.85;font-size:14px}
+    .btn{cursor:pointer;user-select:none;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+    .btn:hover{background:rgba(255,255,255,.12)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c" width="700" height="700"></canvas>
+  <div class="hint" id="hint">✨ Da clic para continuar</div>
+  <div class="btn" id="cta" style="display:none">💌 Abrir Instagram (DM)</div>
+</div>
+
+<script>
+/**
+ * Regalo estilo "puntitos" (particles) que forman imágenes.
+ * Requisitos:
+ *  - Coloca estas imágenes en la misma carpeta que este HTML:
+ *    1) kev.jpg
+ *    2) you.jpg
+ *    3) car.jpg
+ *  - Cambia YOUR_IG_USERNAME
+ */
+const dii_giss = "dii_giss";
+const DM_LINK = `https://ig.me/m/${dii_giss}`;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const cta = document.getElementById('cta');
+
+let stage = 0; // 0: dos fotos, 1: foto carro, 2: CTA
+let particles = [];
+let targets = [];
+let animId = null;
+
+function rand(min,max){return Math.random()*(max-min)+min}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function drawHeartFrame(){
+  // Corazón simple alrededor (trazo)
+  const w=canvas.width, h=canvas.height;
+  ctx.save();
+  ctx.translate(w/2,h/2);
+  ctx.scale(1.15,1.15);
+  ctx.beginPath();
+  for(let t=0;t<Math.PI*2;t+=0.01){
+    const x=16*Math.pow(Math.sin(t),3);
+    const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    ctx.lineTo(x*16,y*16);
+  }
+  ctx.closePath();
+  ctx.strokeStyle="rgba(255,255,255,.35)";
+  ctx.lineWidth=4;
+  ctx.shadowColor="rgba(255,255,255,.15)";
+  ctx.shadowBlur=16;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function imageToPoints(img, opts){
+  const {x0,y0,w,h,step=6,alphaMin=40} = opts;
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext('2d');
+  tctx.drawImage(img,0,0,w,h);
+  const data = tctx.getImageData(0,0,w,h).data;
+
+  const pts = [];
+  for(let y=0;y<h;y+=step){
+    for(let x=0;x<w;x+=step){
+      const i = (y*w + x)*4;
+      const a = data[i+3];
+      if(a>alphaMin){
+        const r=data[i], g=data[i+1], b=data[i+2];
+        pts.push({
+          x: x0 + x,
+          y: y0 + y,
+          r,g,b
+        });
+      }
+    }
+  }
+  return pts;
+}
+
+function ensureParticles(n){
+  while(particles.length < n){
+    particles.push({
+      x: rand(0,canvas.width),
+      y: rand(0,canvas.height),
+      vx: 0, vy: 0,
+      r: 255, g: 255, b: 255
+    });
+  }
+  if(particles.length > n) particles.length = n;
+}
+
+function setTargets(pts){
+  targets = pts;
+  ensureParticles(targets.length);
+  // asignación simple 1:1
+  for(let i=0;i<particles.length;i++){
+    particles[i].tr = targets[i].r;
+    particles[i].tg = targets[i].g;
+    particles[i].tb = targets[i].b;
+  }
+}
+
+function tick(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Fondo suave
+  ctx.fillStyle="#080813";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Mover partículas hacia su target
+  for(let i=0;i<particles.length;i++){
+    const p = particles[i];
+    const t = targets[i];
+    const dx = t.x - p.x;
+    const dy = t.y - p.y;
+
+    // “spring” suave
+    p.vx = (p.vx + dx*0.02) * 0.82;
+    p.vy = (p.vy + dy*0.02) * 0.82;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // color hacia el target
+    p.r += (p.tr - p.r)*0.08;
+    p.g += (p.tg - p.g)*0.08;
+    p.b += (p.tb - p.b)*0.08;
+
+    ctx.fillStyle = `rgb(${p.r|0},${p.g|0},${p.b|0})`;
+    ctx.fillRect(p.x, p.y, 2, 2);
+  }
+
+  // Corazón en stages 0 y 1
+  if(stage <= 1) drawHeartFrame();
+
+  animId = requestAnimationFrame(tick);
+}
+
+async function loadImg(src){
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    img.onload=()=>res(img);
+    img.onerror=rej;
+    img.src=src;
+  });
+}
+
+async function buildStage0(){
+  // Dos fotos lado a lado dentro de un marco central
+  const kev = await loadImg('kev.jpg');
+  const you = await loadImg('you.jpg');
+
+  const W = canvas.width, H = canvas.height;
+  const pad = 90;
+  const boxW = W - pad*2;
+  const boxH = H - pad*2;
+
+  // dos rectángulos verticales
+  const halfW = Math.floor(boxW/2);
+  const pts1 = imageToPoints(kev, {x0:pad, y0:pad, w:halfW, h:boxH, step:6});
+  const pts2 = imageToPoints(you, {x0:pad+halfW, y0:pad, w:halfW, h:boxH, step:6});
+
+  // mezcla de puntos (intercalados)
+  const pts = [];
+  const m = Math.max(pts1.length, pts2.length);
+  for(let i=0;i<m;i++){
+    if(pts1[i]) pts.push(pts1[i]);
+    if(pts2[i]) pts.push(pts2[i]);
+  }
+  setTargets(pts);
+}
+
+async function buildStage1(){
+  const car = await loadImg('car.jpg');
+  const W = canvas.width, H = canvas.height;
+  const pad = 90;
+  const boxW = W - pad*2;
+  const boxH = H - pad*2;
+  const pts = imageToPoints(car, {x0:pad, y0:pad, w:boxW, h:boxH, step:6});
+  setTargets(pts);
+}
+
+function goNext(){
+  stage++;
+  if(stage===1){
+    hint.textContent = "✨ Da clic para el último paso";
+    buildStage1();
+  }else if(stage===2){
+    hint.textContent = "💌 Da clic en el botón para abrir el DM";
+    cta.style.display = "inline-flex";
+  }
+}
+
+cta.addEventListener('click', ()=> window.open(DM_LINK, '_blank'));
+canvas.addEventListener('click', ()=> {
+  if(stage<2) goNext();
+});
+
+(async function init(){
+  await buildStage0();
+  tick();
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuestro rinconcito</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+font-family:"Segoe UI", sans-serif;
+background:black;
+}
+
+/* ESCENAS */
+
+.escena{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+opacity:0;
+transition:opacity 2s;
+padding:20px;
+box-sizing:border-box;
+}
+
+.visible{
+opacity:1;
+}
+
+/* ESCENA 1 — DÍA */
+
+#escena1{
+background-image:url("img/jardin.jpg");
+background-size:cover;
+background-position:center;
+color:white;
+font-size:clamp(18px,4vw,28px);
+text-align:center;
+}
+
+/* ESCENA 2 — MENSAJE */
+
+#escena2{
+background:#f4efe6;
+color:#5a4a3a;
+font-size:clamp(16px,3vw,22px);
+text-align:center;
+}
+
+/* ESCENA 3 — VIDEO */
+
+#escena3{
+background:black;
+}
+
+/* VIDEO */
+
+.video{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+width:min(90vw, 400px);
+max-height:80vh;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* FLECHA REGRESAR */
+
+.flecha{
+position:absolute;
+bottom:60px;
+left:20px;
+font-size:clamp(22px,5vw,34px);
+color:#5a4a3a;
+cursor:pointer;
+background:rgba(255,255,255,0.7);
+padding:10px 16px;
+border-radius:50px;
+z-index:10;
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- ESCENA 1 -->
+
+<div id="escena1" class="escena visible">
+
+Así se siente nuestro rinconcito durante el día...
+
+</div>
+
+
+<!-- ESCENA 2 -->
+
+<div id="escena2" class="escena">
+
+<div>
+
+Aunque la distancia exista...<br><br>
+
+quiero invitarte a disfrutar de un helado 🍦 a mi lado.<br><br>
+
+Porque este es un día especial,
+
+</div>
+
+<div class="flecha" onclick="volverA(1)">←</div>
+
+</div>
+
+
+<!-- ESCENA 3 — VIDEO HELADO -->
+
+<div id="escena3" class="escena">
+
+<video
+id="videoHelado"
+class="video"
+src="video/Videoice.mp4"
+playsinline
+></video>
+
+<div class="flecha" onclick="volverA(2)">←</div>
+
+</div>
+
+
+<script>
+
+let escenaActual = 1
+
+function mostrarEscena(numero){
+
+document.getElementById("escena"+escenaActual).classList.remove("visible")
+
+escenaActual = numero
+
+document.getElementById("escena"+escenaActual).classList.add("visible")
+
+/* si es video, reproducir */
+
+if(numero==3){
+
+let video = document.getElementById("videoHelado")
+
+video.currentTime = 0
+
+video.muted = false
+
+video.play().catch(()=>{
+video.muted=true
+video.play()
+})
+
+video.onended=function(){
+
+// aquí luego conectaremos escena 4
+
+}
+
+}
+
+}
+
+/* TRANSICIÓN AUTOMÁTICA INICIAL */
+
+setTimeout(()=>{
+
+mostrarEscena(2)
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+},7000)
+
+
+/* VOLVER */
+
+function volverA(numero){
+
+mostrarEscena(numero)
+
+/* reiniciar flujo automático */
+
+if(numero==1){
+
+setTimeout(()=>{
+
+mostrarEscena(2)
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+},7000)
+
+}
+
+if(numero==2){
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
+
+
+---------------------------------------
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuestro rinconcito</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+font-family:"Segoe UI", sans-serif;
+background:black;
+}
+
+/* ESCENAS */
+
+.escena{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+opacity:0;
+transition:opacity 2s;
+padding:20px;
+box-sizing:border-box;
+}
+
+.visible{
+opacity:1;
+}
+
+/* ESCENA 1 — DÍA */
+
+#escena1{
+background-image:url("img/jardin.jpg");
+background-size:cover;
+background-position:center;
+color:white;
+font-size:clamp(18px,4vw,28px);
+text-align:center;
+}
+
+/* ESCENA 2 — MENSAJE */
+
+#escena2{
+background:#f4efe6;
+color:#5a4a3a;
+font-size:clamp(16px,3vw,22px);
+text-align:center;
+}
+
+/* ESCENA 4 — MENSAJE REGALO */
+
+#escena4{
+background:linear-gradient(180deg,#ede7f6,#dcd0ff);
+color:#3e3554;
+font-size:clamp(16px, 3vw, 22px);
+text-align:center;
+padding:30px;
+}
+
+
+/* ESCENA 5 — VIDEO KEV */
+
+#escena5{
+background:linear-gradient(180deg,#e8eaf6,#c5cae9);
+}
+
+
+/* ESCENA 6 — FINAL LUNA */
+
+#escena6{
+background-image:url("img/playa.jpg");
+background-size:cover;
+background-position:center;
+color:white;
+font-size:clamp(18px, 3vw, 26px);
+text-align:center;
+padding:30px;
+}
+
+
+/* ESCENA 3 — VIDEO */
+
+#escena3{
+background:black;
+}
+
+/* VIDEO */
+
+.video{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+width:min(90vw, 400px);
+max-height:80vh;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* FLECHA REGRESAR */
+
+.flecha{
+position:absolute;
+bottom:60px;
+left:20px;
+font-size:clamp(22px,5vw,34px);
+color:#5a4a3a;
+cursor:pointer;
+background:rgba(255,255,255,0.7);
+padding:10px 16px;
+border-radius:50px;
+z-index:10;
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- ESCENA 1 -->
+
+<div id="escena1" class="escena visible">
+
+Así se siente nuestro rinconcito durante el día...
+
+</div>
+
+
+<!-- ESCENA 2 -->
+
+<div id="escena2" class="escena">
+
+<div>
+
+Aunque la distancia exista...<br><br>
+
+quiero invitarte a disfrutar de un helado 🍦 a mi lado.<br><br>
+
+Porque este es un día especial,
+
+</div>
+
+<div class="flecha" onclick="volverA(1)">←</div>
+
+</div>
+
+
+<!-- ESCENA 3 — VIDEO HELADO -->
+
+<div id="escena3" class="escena">
+
+<video
+id="videoHelado"
+class="video"
+src="video/Videoice.mp4"
+playsinline
+></video>
+
+<div class="flecha" onclick="volverA(2)">←</div>
+
+</div>
+
+
+
+<!-- ESCENA 4 — MENSAJE REGALO -->
+
+<div id="escena4" class="escena">
+
+<div>
+
+Tengo algo para ti…<br><br>
+
+Un pequeño regalo que recree con mucho cariño.<br><br>
+
+… y te está esperando. 🎁
+
+</div>
+
+<div class="flecha" onclick="volverA(3)">←</div>
+
+</div>
+
+
+<!-- ESCENA 5 — VIDEO KEV -->
+
+<div id="escena5" class="escena">
+
+<video
+id="videoKev"
+class="video"
+src="video/regalokev.mp4"
+playsinline
+></video>
+
+<div class="flecha" onclick="volverA(4)">←</div>
+
+</div>
+
+
+<!-- ESCENA 6 — FINAL -->
+
+<div id="escena6" class="escena">
+
+<div style="margin-top:120px; max-width:700px;">
+
+Y así se siente nuestro rinconcito cuando la noche llega… 🌙<br><br><br><br>
+
+No importa si es de día o de noche…<br>
+este siempre será nuestro lugar.<br>
+Feliz San Valentin Mi principe 🤴
+
+</div>
+
+<div class="flecha" onclick="volverA(5)">←</div>
+
+</div>
+
+
+<script>
+
+let escenaActual = 1
+
+let audioActivado = false;
+
+/* activar audio en la primera interacción */
+
+document.addEventListener("click", function activarAudio(){
+
+audioActivado = true;
+
+let video = document.getElementById("videoHelado");
+
+if(video){
+
+video.muted = false;
+
+}
+
+document.removeEventListener("click", activarAudio);
+
+});
+
+
+function mostrarEscena(numero){
+
+document.getElementById("escena"+escenaActual).classList.remove("visible")
+
+escenaActual = numero
+
+document.getElementById("escena"+escenaActual).classList.add("visible")
+
+/* si es video, reproducir */
+
+if(numero==3){
+
+let video = document.getElementById("videoHelado")
+
+video.currentTime = 0
+
+video.muted = !audioActivado;
+
+video.play()
+
+video.onended = function(){
+
+mostrarEscena(4)
+
+}
+
+}
+
+if(numero==5){
+
+let video = document.getElementById("videoKev")
+
+video.currentTime = 0
+
+video.muted = !audioActivado
+
+video.play()
+
+video.onended = function(){
+
+mostrarEscena(6)
+
+}
+
+}
+
+
+if(numero==4){
+
+setTimeout(()=>{
+
+mostrarEscena(5)
+
+},6000)
+
+}
+
+
+}
+
+/* TRANSICIÓN AUTOMÁTICA INICIAL */
+
+setTimeout(()=>{
+
+mostrarEscena(2)
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+},7000)
+
+
+/* VOLVER */
+
+function volverA(numero){
+
+mostrarEscena(numero)
+
+/* reiniciar flujo automático */
+
+if(numero==1){
+
+setTimeout(()=>{
+
+mostrarEscena(2)
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+},7000)
+
+}
+
+if(numero==2){
+
+setTimeout(()=>{
+
+mostrarEscena(3)
+
+},7000)
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+

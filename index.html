@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our little place</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+font-family:"Segoe UI", sans-serif;
+background:black;
+}
+
+/* SCENES */
+
+.escena{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+opacity:0;
+transition:opacity 2s;
+padding:20px;
+box-sizing:border-box;
+}
+
+.visible{
+opacity:1;
+}
+
+/* SCENE 1 — DAY */
+
+#escena1{
+background-image:url("img/jardin.jpg");
+background-size:cover;
+background-position:center;
+color:white;
+font-size:clamp(18px,4vw,28px);
+text-align:center;
+}
+
+/* SCENE 2 — MESSAGE */
+
+#escena2{
+background:#f4efe6;
+color:#5a4a3a;
+font-size:clamp(16px,3vw,22px);
+text-align:center;
+}
+
+/* SCENE 4 — GIFT MESSAGE */
+
+#escena4{
+background:linear-gradient(180deg,#ede7f6,#dcd0ff);
+color:#3e3554;
+font-size:clamp(16px,3vw,22px);
+text-align:center;
+padding:30px;
+}
+
+/* SCENE 5 — KEV VIDEO */
+
+#escena5{
+background:linear-gradient(180deg,#e8eaf6,#c5cae9);
+}
+
+/* SCENE 6 — FINAL NIGHT */
+
+#escena6{
+background-image:url("img/playa.jpg");
+background-size:cover;
+background-position:center;
+color:white;
+font-size:clamp(18px,3vw,26px);
+text-align:center;
+padding:30px;
+}
+
+/* SCENE 3 — VIDEO */
+
+#escena3{
+background:black;
+}
+
+/* VIDEO */
+
+.video{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+width:min(90vw, 400px);
+max-height:80vh;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* BACK ARROW */
+
+.flecha{
+position:absolute;
+bottom:60px;
+left:20px;
+font-size:clamp(22px,5vw,34px);
+color:#5a4a3a;
+cursor:pointer;
+background:rgba(255,255,255,0.7);
+padding:10px 16px;
+border-radius:50px;
+z-index:10;
+}
+
+</style>
+
+</head>
+<body>
+
+
+<!-- SCENE 1 -->
+
+<div id="escena1" class="escena visible">
+
+This is how our little place feels during the day...
+
+</div>
+
+
+<!-- SCENE 2 -->
+
+<div id="escena2" class="escena">
+
+<div>
+
+Even if distance exists...<br><br>
+
+I want to invite you to enjoy an ice cream 🍦 by my side.<br><br>
+
+Because this is a special day,
+
+</div>
+
+<div class="flecha" onclick="volverA(1)">←</div>
+
+</div>
+
+
+<!-- SCENE 3 -->
+
+<div id="escena3" class="escena">
+
+<video
+id="videoHelado"
+class="video"
+src="video/Videoice.mp4"
+playsinline
+></video>
+
+<div class="flecha" onclick="volverA(2)">←</div>
+
+</div>
+
+
+<!-- SCENE 4 -->
+
+<div id="escena4" class="escena">
+
+<div>
+
+I have something for you...<br><br>
+
+A small gift I created with love.<br><br>
+
+... and it's waiting for you. 🎁
+
+</div>
+
+<div class="flecha" onclick="volverA(3)">←</div>
+
+</div>
+
+
+<!-- SCENE 5 -->
+
+<div id="escena5" class="escena">
+
+<video
+id="videoKev"
+class="video"
+src="video/regalokev.mp4"
+playsinline
+></video>
+
+<div class="flecha" onclick="volverA(4)">←</div>
+
+</div>
+
+
+<!-- SCENE 6 -->
+
+<div id="escena6" class="escena">
+
+<div style="margin-top:120px; max-width:700px;">
+
+And this is how our little place feels when night arrives... 🌙<br><br><br><br>
+
+No matter if it's day or night...<br>
+this will always be our place.<br><br>
+
+Happy Valentine's Day, my prince 🤴
+
+</div>
+
+<div class="flecha" onclick="volverA(5)">←</div>
+
+</div>
+
+
+<script>
+
+let escenaActual = 1
+let temporizador = null;
+
+
+
+let audioActivado = false;
+
+document.addEventListener("click", function activarAudio(){
+
+audioActivado = true;
+
+document.removeEventListener("click", activarAudio);
+
+});
+
+
+/* STOP ALL VIDEOS FUNCTION */
+
+function detenerVideos(){
+
+let v1 = document.getElementById("videoHelado");
+let v2 = document.getElementById("videoKev");
+
+v1.pause();
+v2.pause();
+
+}
+
+
+function mostrarEscena(numero){
+
+/* cancelar cualquier temporizador anterior */
+if(temporizador){
+clearTimeout(temporizador);
+temporizador = null;
+}
+
+/* detener todos los videos */
+detenerVideos();
+
+/* cambiar escena */
+document.getElementById("escena"+escenaActual).classList.remove("visible");
+
+escenaActual = numero;
+
+document.getElementById("escena"+escenaActual).classList.add("visible");
+
+
+/* VIDEO HELADO */
+if(numero==3){
+
+let video = document.getElementById("videoHelado");
+
+video.currentTime = 0;
+video.muted = !audioActivado;
+video.play();
+
+video.onended = function(){
+
+mostrarEscena(4);
+
+};
+
+}
+
+
+/* MENSAJE REGALO */
+if(numero==4){
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(5);
+
+},6000);
+
+}
+
+
+/* VIDEO KEV */
+if(numero==5){
+
+let video = document.getElementById("videoKev");
+
+video.currentTime = 0;
+video.muted = !audioActivado;
+video.play();
+
+video.onended = function(){
+
+mostrarEscena(6);
+
+};
+
+}
+
+}
+
+
+
+/* INITIAL AUTO FLOW */
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(2);
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(3);
+
+},7000);
+
+},7000);
+
+
+
+function volverA(numero){
+
+mostrarEscena(numero);
+
+if(numero==1){
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(2);
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(3);
+
+},7000);
+
+},7000);
+
+}
+
+if(numero==2){
+
+temporizador = setTimeout(()=>{
+
+mostrarEscena(3);
+
+},7000);
+
+}
+
+}
+
+
+</script>
+
+</body>
+</html>
