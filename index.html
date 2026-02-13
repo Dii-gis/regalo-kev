@@ -120,9 +120,10 @@ z-index:10;
 
 </head>
 <body>
-<audio id="musicaFondo" loop>
-<source src="music/experience.mp3" type="audio/mpeg">
+<audio id="musicaFondo" loop preload="auto">
+<source src="music/whodoyoulove.mp3" type="audio/mpeg">
 </audio>
+
 
 
 
@@ -242,8 +243,8 @@ audioActivado = true;
 
 let musica = document.getElementById("musicaFondo");
 
-musica.volume = 0.75;     // volumen suave
-musica.currentTime = 38;  
+musica.volume = 0.65;     // volumen suave
+musica.currentTime = 12;  
 musica.play();
 
 }
