@@ -120,6 +120,10 @@ z-index:10;
 
 </head>
 <body>
+<audio id="musicaFondo" loop>
+<source src="music/experience.mp3" type="audio/mpeg">
+</audio>
+
 
 
 <!-- SCENE 1 -->
@@ -232,11 +236,21 @@ let audioActivado = false;
 
 document.addEventListener("click", function activarAudio(){
 
+if(!audioActivado){
+
 audioActivado = true;
+
+let musica = document.getElementById("musicaFondo");
+
+musica.volume = 0.4; // volumen suave
+musica.play();
+
+}
 
 document.removeEventListener("click", activarAudio);
 
 });
+
 
 
 /* STOP ALL VIDEOS FUNCTION */
