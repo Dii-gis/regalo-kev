@@ -100,6 +100,39 @@ max-height:80vh;
 border-radius:20px;
 box-shadow:0 10px 40px rgba(0,0,0,0.4);
 }
+/* MENSAJE SOBRE VIDEO KEV */
+
+#mensajeKev{
+
+position:absolute;
+
+bottom:12%;
+
+left:50%;
+transform:translateX(-50%);
+
+width:90%;
+max-width:400px;
+
+text-align:center;
+
+color:white;
+
+font-size:clamp(14px, 4vw, 20px);
+
+font-weight:500;
+
+background:transparent;
+
+opacity:0;
+
+transition:opacity 1.5s ease;
+
+pointer-events:none;
+
+text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+
+}
 
 /* BACK ARROW */
 
@@ -151,9 +184,6 @@ transform:translateX(-50%) translateY(0);
 <audio id="musicaFondo" loop preload="auto">
 <source src="music/whodoyoulove.mp3" type="audio/mpeg">
 </audio>
-
-
-
 
 <!-- SCENE 1 -->
 
@@ -228,8 +258,8 @@ class="video"
 src="video/regalokev.mp4"
 playsinline
 ></video>
-<div class="textoKev">
-Seeing you with tenderness… feels like this. My prince.
+<div id="mensajeKev">
+Seeing you with tenderness... feels like this. My prince.
 </div>
 
 <div class="flecha" onclick="volverA(4)">←</div>
@@ -382,8 +412,17 @@ mostrarEscena(5);
 
 /* VIDEO KEV */
 if(numero==5){
-cambiarVolumenMusica(0.15);
 let video = document.getElementById("videoKev");
+let mensaje = document.getElementById("mensajeKev");
+
+mensaje.style.opacity = 0;
+
+setTimeout(()=>{
+
+mensaje.style.opacity = 1;
+
+},2000);
+cambiarVolumenMusica(0.15);
 
 video.currentTime = 0;
 video.muted = !audioActivado;
